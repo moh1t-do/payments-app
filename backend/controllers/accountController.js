@@ -1,9 +1,10 @@
+const mongoose = require('mongoose');
 const Account = require('../models/accountSchema');
 
 async function handleGetBalance(req, res) {
     const userid = req.userid;
     try {
-        const user = await Account.findOne({ userid: userid });
+        const user = await Account.findOne({ userid: new mongoose.Types.ObjectId(userid) });
         res.json({ balance: user.balance });
     }
     catch (error) {
@@ -13,34 +14,54 @@ async function handleGetBalance(req, res) {
 }
 
 async function handleTransfer(req, res) {
-    // start session
-    const session = await Account.startSession();
-
-    session.startTransaction();
+    const userid = req.userid;
     const { to, amount } = req.body;
 
-    const account = await Account.findOne({ userid: req.userid }).session(session);
+    // Start a session
+    const session = await mongoose.startSession();
 
-    if (!account || account.balance < amount) {
+    try {
+        // Start a transaction
+        session.startTransaction();
+
+        // Fetch the sender's account
+        const account = await Account.findOne({ userid: new mongoose.Types.ObjectId(userid) }).session(session);
+        if (!account || account.balance < amount) {
+            throw new Error("Insufficient balance");
+        }
+
+        // Fetch the recipient's account
+        const toAccount = await Account.findOne({ userid: new mongoose.Types.ObjectId(to) }).session(session);
+        if (!toAccount) {
+            throw new Error("Invalid recipient");
+        }
+
+        // Perform the transfer
+        await Account.updateOne(
+            { userid: new mongoose.Types.ObjectId(userid) },
+            { $inc: { balance: -amount } },
+            { session }
+        );
+
+        await Account.updateOne(
+            { userid: new mongoose.Types.ObjectId(to) },
+            { $inc: { balance: amount } },
+            { session }
+        );
+
+        // Commit the transaction
+        await session.commitTransaction();
+        res.json({ message: "Transfer successful" });
+    } catch (error) {
+        // Abort the transaction on error
+        await session.abortTransaction();
+        console.error(error);
+        res.status(400).json({ message: error.message });
+    } finally {
+        // End the session
         session.endSession();
-        return res.status(400).json({ message: "Insufficient balance" });
     }
-
-    const toAccount = await Account.findOne({ userid: to }).session(session);
-
-    if (!toAccount) {
-        session.endSession();
-        return res.status(400).json({ message: "Invalid recipient" });
-    }
-
-    // perform transfer
-    await Account.updateOne({ userid: req.userid }, { $inc: { balance: -amount } }).session(session);
-    await Account.updateOne({ userid: to }, { $inc: { balance: amount } }).session(session);
-
-    // close session
-    await session.commitTransaction();
-    res.json({ message: "Transfer successful" });
-
 }
+
 
 module.exports = { handleGetBalance, handleTransfer };
