@@ -8,8 +8,6 @@ dotenv.config();
 
 const authSchema = z.object({
     username: z.string().min(1, "Username cannot be empty"),
-    firstname: z.string().min(1, "Firstname cannot be empty"),
-    lastname: z.string().min(1, "Lastname cannot be empty"),
     password: z.string().min(1, "Password cannot be empty")
 });
 
@@ -34,56 +32,57 @@ async function handleSignUp(req, res) {
     if (!success) {
         res.status(400).json({ error: 'Invalid request body' });
     }
+    else {
+        try {
+            const user = await User.findOne({ username: body.username });
+            if (user) {
+                res.status(400).json({ error: 'User already exists' });
+            } else {
+                const newuser = await User.create(body);
+                await Account.create({ balance: Math.random() * 1000, userid: newuser._id });
+                const token = generateToken(newuser._id);
+                res.status(201).json({
+                    message: 'User created successfully',
+                    token
+                });
+            }
 
-    try {
-        const user = await User.findOne({ username: body.username });
-        if (user) {
-            res.status(400).json({ error: 'User already exists' });
-        } else {
-            const newuser = await User.create(body);
-            await Account.create({ balance: Math.random() * 1000, user: newuser._id });
-            const token = generateToken(newuser._id);
-            res.status(201).json({
-                message: 'User created successfully',
-                token
-            });
+        } catch (error) {
+            console.error(error);
+            res.status(400).json({ error: error });
         }
-
-    } catch (error) {
-        console.error(error);
-        res.status(400).json({ error: error });
     }
 }
 
 async function handleSignIn(req, res) {
     const body = req.body;
     const { success } = authSchema.safeParse(body);
-
     if (!success) {
         res.status(400).json({ error: 'Invalid request body' });
     }
-
-    try {
-        const user = await User.findOne({ username: body.username });
-        if (user) {
-            if (user.password === body.password) {
-                const token = generateToken(user._id);
-                res.status(200).json({
-                    message: 'User signed in successfully',
-                    token
-                });
-            } else {
-                res.status(400).json({ error: 'Invalid password' });
+    else {
+        try {
+            const user = await User.findOne({ username: body.username });
+            if (user) {
+                if (user.password === body.password) {
+                    const token = generateToken(user._id);
+                    res.status(200).json({
+                        message: 'User signed in successfully',
+                        token
+                    });
+                } else {
+                    res.status(400).json({ error: 'Invalid password' });
+                }
             }
-        }
-        else {
-            res.status(400).json({ error: 'User not found' });
-        }
+            else {
+                res.status(400).json({ error: 'User not found' });
+            }
 
-    } catch (error) {
-        console.error(error);
-        res.status(400).json({ error: error });
+        } catch (error) {
+            console.error(error);
+            res.status(400).json({ error: error });
 
+        }
     }
 }
 
