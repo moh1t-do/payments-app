@@ -26,19 +26,19 @@ export function Signup() {
                 <SubHeading label={"Enter your infromation to create an account"} />
                 <InputBox onChange={e => {
                     setFirstName(e.target.value)
-                }} placeholder={"Jaser"} label={"First Name"} />
+                }} placeholder={"user"} label={"First Name"} />
 
                 <InputBox onChange={e => {
                     setLastName(e.target.value)
-                }} placeholder={"Syed"} label={"Last Name"} />
+                }} placeholder={"user"} label={"Last Name"} />
 
                 <InputBox onChange={e => {
                     setUsername(e.target.value)
-                }} placeholder={"jaser@gmail.com"} label={"Email"} />
+                }} placeholder={"user@gmail.com"} label={"Email"} />
 
                 <InputBox onChange={e => {
                     setPassword(e.target.value)
-                }} placeholder={"Password"} label={"Password"} />
+                }} placeholder={"pass"} label={"Password"} />
 
                 <div className="pt-4">
                     <Button onClick={async () => {

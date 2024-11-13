@@ -24,20 +24,25 @@ export function Signin() {
                 <SubHeading label={"Enter your credentials to access your account"} />
                 <InputBox onChange={e => {
                     setUsername(e.target.value)
-                }} placeholder={"jaser@gmail.com"} label={"Email"} />
+                }} placeholder={"user@gmail.com"} label={"Email"} />
 
                 <InputBox onChange={e => {
                     setPassword(e.target.value)
-                }} placeholder={""} label={"Password"} />
+                }} placeholder={"pass"} label={"Password"} />
                 <div className="pt-4">
 
                     <Button onClick={async () => {
-                        const response = await axios.post("http://localhost:8000/api/v1/user/signin", {
-                            username,
-                            password
-                        });
-                        localStorage.getItem("token", response.data.token)
-                        navigate("/dashboard")
+                        try {
+                            const response = await axios.post("http://localhost:8000/api/v1/user/signin", {
+                                username,
+                                password
+                            });
+                            localStorage.setItem("token", response.data.token)
+                            navigate("/dashboard")
+                        } catch (error) {
+                            console.log(error);
+                        }
+
                     }} label={"Sign In"} />
 
                 </div>
