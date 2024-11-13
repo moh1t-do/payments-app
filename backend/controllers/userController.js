@@ -124,4 +124,17 @@ async function handleGetFilteredUsers(req, res) {
     })
 }
 
-module.exports = { handleSignIn, handleSignUp, handleUpdate, handleGetFilteredUsers };
+function handleVerifyToken(req, res) {
+    const body = req.body;
+    const token = body.token
+    jwt.verify(token, process.env.JWT_SECRET, (error, decoded) => {
+        if (error) {
+            res.status(401).json({ error: 'Unauthorized' });
+        }
+        if (decoded != null) {
+            res.status(200).json({ message: 'Token verified' });
+        }
+    });
+};
+
+module.exports = { handleSignIn, handleSignUp, handleUpdate, handleGetFilteredUsers, handleVerifyToken };
